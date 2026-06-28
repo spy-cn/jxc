@@ -1,0 +1,7 @@
+# macOS / Windows 系统文件
+.DS_Store
+Thumbs.db
+
+# IDE（仓库根的 IDEA 配置，子项目的由各自 .gitignore 处理）
+.idea/
+*.iml

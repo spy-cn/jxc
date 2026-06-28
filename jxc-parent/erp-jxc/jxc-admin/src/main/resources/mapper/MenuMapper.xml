@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spy.jxc.admin.mapper.MenuMapper">
+
+    <resultMap id="menuMap" type="com.spy.jxc.admin.entity.Menu">
+        <id property="menuId" column="menu_id"/>
+        <result property="menuIcon" column="menu_icon"/>
+        <result property="menuName" column="menu_name"/>
+        <result property="pId" column="p_id"/>
+        <result property="menuState" column="menu_state"/>
+        <result property="menuUrl" column="menu_url"/>
+    </resultMap>
+
+    <select id="findMenusByUserId" resultMap="menuMap">
+        SELECT DISTINCT m.*
+        FROM t_menu m
+        INNER JOIN t_role_menu rm ON m.menu_id = rm.menu_id
+        INNER JOIN t_user_role ur ON rm.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+        ORDER BY m.menu_id
+    </select>
+</mapper>

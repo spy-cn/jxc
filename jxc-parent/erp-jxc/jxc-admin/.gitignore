@@ -1,0 +1,37 @@
+# ===== Java / Maven =====
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# ===== IntelliJ IDEA =====
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+jxc-admin.iml
+
+# ===== Eclipse =====
+.classpath
+.project
+.settings/
+bin/
+
+# ===== VS Code =====
+.vscode/
+
+# ===== 编译产物 =====
+*.class
+*.jar
+*.war
+*.ear
+*.log
+
+# ===== 系统文件 =====
+.DS_Store
+Thumbs.db
+
+# ===== Spring Boot 临时文件 =====
+*.original
+HELP.md

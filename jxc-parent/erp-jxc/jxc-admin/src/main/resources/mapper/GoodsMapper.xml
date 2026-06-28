@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spy.jxc.admin.mapper.GoodsMapper">
+
+    <resultMap id="goodsMap" type="com.spy.jxc.admin.entity.Goods">
+        <id property="goodsId" column="goods_id"/>
+        <result property="goodsCode" column="goods_code"/>
+        <result property="goodsName" column="goods_name"/>
+        <result property="inventoryQuantity" column="inventory_quantity"/>
+        <result property="minNum" column="min_num"/>
+        <result property="goodsModel" column="goods_model"/>
+        <result property="goodsProducer" column="goods_producer"/>
+        <result property="purchasingPrice" column="purchasing_price"/>
+        <result property="lastPurchasingPrice" column="last_purchasing_price"/>
+        <result property="remarks" column="remarks"/>
+        <result property="sellingPrice" column="selling_price"/>
+        <result property="state" column="state"/>
+        <result property="goodsUnit" column="goods_unit"/>
+        <result property="goodsTypeId" column="goods_type_id"/>
+        <result property="goodsTypeName" column="goods_type_name"/>
+    </resultMap>
+
+    <select id="listAlarm" resultMap="goodsMap">
+        SELECT g.*, t.goods_type_name
+        FROM t_goods g
+        LEFT JOIN t_goods_type t ON g.goods_type_id = t.goods_type_id
+        WHERE g.inventory_quantity &lt;= g.min_num
+        ORDER BY (g.inventory_quantity - g.min_num)
+    </select>
+
+    <select id="listWithTypeName" resultMap="goodsMap">
+        SELECT g.*, t.goods_type_name
+        FROM t_goods g
+        LEFT JOIN t_goods_type t ON g.goods_type_id = t.goods_type_id
+        <where>
+            <if test="typeId != null">
+                AND g.goods_type_id IN (
+                    WITH RECURSIVE type_tree (goods_type_id) AS (
+                        SELECT goods_type_id FROM t_goods_type WHERE goods_type_id = #{typeId}
+                        UNION ALL
+                        SELECT child.goods_type_id FROM t_goods_type child
+                        INNER JOIN type_tree parent ON child.p_id = parent.goods_type_id
+                    )
+                    SELECT goods_type_id FROM type_tree
+                )
+            </if>
+            <if test="codeOrName != null and codeOrName != ''">
+                AND (g.goods_code LIKE CONCAT('%', #{codeOrName}, '%')
+                  OR g.goods_name LIKE CONCAT('%', #{codeOrName}, '%'))
+            </if>
+        </where>
+        ORDER BY g.goods_id DESC
+    </select>
+</mapper>

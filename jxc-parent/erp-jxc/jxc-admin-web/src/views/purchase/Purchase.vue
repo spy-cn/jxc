@@ -1,0 +1,94 @@
+<template>
+  <div class="app-container">
+    <el-card>
+      <div class="search-bar">
+        <el-select v-model="form.supplierId" placeholder="选择供应商" style="width:220px" filterable>
+          <el-option v-for="s in suppliers" :key="s.supplierId" :label="s.supplierName" :value="s.supplierId" />
+        </el-select>
+        <el-input v-model="form.remarks" placeholder="备注" style="width:260px;margin-left:8px" />
+        <el-button type="primary" :icon="Check" @click="handleSave" style="margin-left:8px" :disabled="!form.supplierId || tableData.length===0">保存入库</el-button>
+      </div>
+      <el-button type="success" :icon="Plus" @click="dialogVisible=true" style="margin-bottom:12px">选择商品</el-button>
+      <el-table :data="tableData" border stripe show-summary :summary-method="getSummary">
+        <el-table-column type="index" label="序号" width="60" />
+        <el-table-column prop="goodsCode" label="编码" width="120" />
+        <el-table-column prop="goodsName" label="名称" />
+        <el-table-column prop="goodsModel" label="型号" width="100" />
+        <el-table-column label="数量" width="120">
+          <template #default="{ row }"><el-input-number v-model="row.goodsNum" :min="1" size="small" @change="calc(row)" /></template>
+        </el-table-column>
+        <el-table-column prop="goodsUnit" label="单位" width="70" />
+        <el-table-column label="单价" width="120">
+          <template #default="{ row }"><el-input-number v-model="row.price" :min="0" :precision="2" size="small" @change="calc(row)" /></template>
+        </el-table-column>
+        <el-table-column prop="total" label="金额" width="100" />
+        <el-table-column label="操作" width="80">
+          <template #default="{ $index }"><el-button type="danger" link @click="tableData.splice($index,1)">移除</el-button></template>
+        </el-table-column>
+      </el-table>
+    </el-card>
+
+    <el-dialog v-model="dialogVisible" title="选择商品" width="700px">
+      <el-input v-model="searchKey" placeholder="编码/名称" style="width:200px;margin-bottom:8px" @keyup.enter="loadGoods" />
+      <el-table :data="goodsList" border @selection-change="onSelect" height="400">
+        <el-table-column type="selection" width="50" />
+        <el-table-column prop="goodsCode" label="编码" width="120" />
+        <el-table-column prop="goodsName" label="名称" />
+        <el-table-column prop="inventoryQuantity" label="库存" width="80" />
+        <el-table-column prop="purchasingPrice" label="采购价" width="90" />
+      </el-table>
+      <template #footer>
+        <el-button @click="dialogVisible=false">取消</el-button>
+        <el-button type="primary" @click="confirmSelect">添加</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+<script setup>
+import { ref, onMounted } from 'vue'
+import { Check, Plus } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+import { listSupplier, listGoods, savePurchase } from '../../api'
+
+const suppliers = ref([])
+const goodsList = ref([])
+const tableData = ref([])
+const selected = ref([])
+const dialogVisible = ref(false)
+const searchKey = ref('')
+const form = ref({})
+
+const calc = (row) => { row.total = (row.price * row.goodsNum).toFixed(2) * 1 }
+const getSummary = ({ columns, data }) => {
+  const sums = []
+  columns.forEach((col, i) => {
+    if (i === 2) sums[i] = '合计'
+    else if (col.property === 'total') sums[i] = data.reduce((s, r) => s + (r.total || 0), 0).toFixed(2)
+    else if (col.property === 'goodsNum') sums[i] = data.reduce((s, r) => s + (r.goodsNum || 0), 0)
+    else sums[i] = ''
+  })
+  return sums
+}
+const loadGoods = async () => { const res = await listGoods({ codeOrName: searchKey.value }); goodsList.value = res.data }
+const onSelect = (sel) => { selected.value = sel }
+const confirmSelect = () => {
+  selected.value.forEach(g => {
+    if (!tableData.value.find(t => t.goodsId === g.goodsId)) {
+      tableData.value.push({
+        goodsId: g.goodsId, goodsCode: g.goodsCode, goodsName: g.goodsName, goodsModel: g.goodsModel,
+        goodsUnit: g.goodsUnit, goodsTypeId: g.goodsTypeId, goodsNum: 1, price: g.purchasingPrice || 0, total: g.purchasingPrice || 0
+      })
+    }
+  })
+  dialogVisible.value = false
+}
+const handleSave = async () => {
+  await savePurchase({ supplierId: form.value.supplierId, remarks: form.value.remarks, goodsList: tableData.value })
+  ElMessage.success('入库成功')
+  tableData.value = []; form.value = { remarks: '' }
+}
+onMounted(async () => {
+  const res = await listSupplier(); suppliers.value = res.data
+  loadGoods()
+})
+</script>

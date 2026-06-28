@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spy.jxc.admin.mapper.CountMapper">
+
+    <select id="purchaseCount" resultType="java.util.Map">
+        SELECT g.goods_id AS goodsId, g.goods_code AS goodsCode, g.goods_name AS goodsName,
+               g.goods_model AS goodsModel, g.goods_unit AS goodsUnit,
+               SUM(pg.goods_num) AS totalNum, SUM(pg.total) AS totalAmount
+        FROM t_purchase_list_goods pg
+        INNER JOIN t_purchase_list pl ON pg.purchase_list_id = pl.purchase_list_id
+        INNER JOIN t_goods g ON pg.goods_id = g.goods_id
+        <where>
+            <if test="startDate != null and startDate != ''">AND pl.purchase_date &gt;= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND pl.purchase_date &lt;= #{endDate}</if>
+            <if test="typeId != null">AND g.goods_type_id = #{typeId}</if>
+        </where>
+        GROUP BY g.goods_id
+        ORDER BY totalAmount DESC
+    </select>
+
+    <select id="saleCount" resultType="java.util.Map">
+        SELECT g.goods_id AS goodsId, g.goods_code AS goodsCode, g.goods_name AS goodsName,
+               g.goods_model AS goodsModel, g.goods_unit AS goodsUnit,
+               SUM(sg.goods_num) AS totalNum, SUM(sg.total) AS totalAmount
+        FROM t_sale_list_goods sg
+        INNER JOIN t_sale_list sl ON sg.sale_list_id = sl.sale_list_id
+        INNER JOIN t_goods g ON sg.goods_id = g.goods_id
+        <where>
+            <if test="startDate != null and startDate != ''">AND sl.sale_date &gt;= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND sl.sale_date &lt;= #{endDate}</if>
+            <if test="typeId != null">AND g.goods_type_id = #{typeId}</if>
+        </where>
+        GROUP BY g.goods_id
+        ORDER BY totalAmount DESC
+    </select>
+
+    <select id="supplierCount" resultType="java.util.Map">
+        SELECT s.supplier_id AS supplierId, s.supplier_name AS supplierName,
+               COUNT(pl.purchase_list_id) AS orderCount, SUM(pl.amount_payable) AS totalAmount
+        FROM t_purchase_list pl
+        INNER JOIN t_supplier s ON pl.supplier_id = s.supplier_id
+        <where>
+            <if test="startDate != null and startDate != ''">AND pl.purchase_date &gt;= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND pl.purchase_date &lt;= #{endDate}</if>
+        </where>
+        GROUP BY s.supplier_id
+        ORDER BY totalAmount DESC
+    </select>
+
+    <select id="customerCount" resultType="java.util.Map">
+        SELECT c.customer_id AS customerId, c.customer_name AS customerName,
+               COUNT(sl.sale_list_id) AS orderCount, SUM(sl.amount_payable) AS totalAmount
+        FROM t_sale_list sl
+        INNER JOIN t_customer c ON sl.customer_id = c.customer_id
+        <where>
+            <if test="startDate != null and startDate != ''">AND sl.sale_date &gt;= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND sl.sale_date &lt;= #{endDate}</if>
+        </where>
+        GROUP BY c.customer_id
+        ORDER BY totalAmount DESC
+    </select>
+
+    <select id="saleDayCount" resultType="java.util.Map">
+        SELECT sale_date AS saleDate, SUM(amount_payable) AS totalAmount
+        FROM t_sale_list
+        <where>
+            <if test="startDate != null and startDate != ''">AND sale_date &gt;= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND sale_date &lt;= #{endDate}</if>
+        </where>
+        GROUP BY sale_date
+        ORDER BY sale_date
+    </select>
+
+    <select id="saleMonthCount" resultType="java.util.Map">
+        SELECT DATE_FORMAT(sale_date, '%Y-%m') AS saleMonth, SUM(amount_payable) AS totalAmount
+        FROM t_sale_list
+        <where>
+            <if test="startDate != null and startDate != ''">AND sale_date &gt;= #{startDate}</if>
+            <if test="endDate != null and endDate != ''">AND sale_date &lt;= #{endDate}</if>
+        </where>
+        GROUP BY saleMonth
+        ORDER BY saleMonth
+    </select>
+</mapper>
